@@ -436,8 +436,11 @@ def health():
 
 # ── STARTUP ───────────────────────────────────────────────────────────────────
 
-if __name__ == "__main__":
+# Initialize DB on startup (works for both gunicorn and direct run)
+with app.app_context():
     db.init_db()
+
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8080))
     print(f"\n{'═'*50}")
     print(f"  ReviewLedger · {'Production' if db.USE_POSTGRES else 'Local Dev'}")
