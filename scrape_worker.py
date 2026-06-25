@@ -83,6 +83,42 @@ def _scrape_trustpilot_direct(ctx, start_url: str, slug: str, name: str, max_pag
             except Exception:
                 pass
 
+        # HTML fallback when JSON-LD is empty
+        if not page_reviews:
+            containers = (
+                soup.find_all("article", class_=_re.compile(r"review")) or
+                soup.find_all("div", attrs={"data-service-review-rating": True}) or
+                soup.find_all("div", class_=_re.compile(r"reviewCard|styles_reviewCard"))
+            )
+            for container in containers:
+                try:
+                    body_el = container.find(class_=_re.compile(r"reviewContent|typography_body")) or container.find("p")
+                    body = (body_el.get_text(strip=True) if body_el else "").strip()
+                    if not body or len(body) < 15:
+                        continue
+                    rating_el = container.find(attrs={"data-service-review-rating": True})
+                    rating = float(rating_el["data-service-review-rating"]) if rating_el else 3.0
+                    author_el = container.find(class_=_re.compile(r"consumer|author|reviewer"))
+                    author = author_el.get_text(strip=True) if author_el else "Reviewer"
+                    date_el = container.find("time")
+                    date_str = date_el.get("datetime", "") if date_el else ""
+                    try: review_date = _dt.fromisoformat(date_str[:19]) if date_str else _dt.utcnow()
+                    except: review_date = _dt.utcnow()
+                    body_hash = hashlib.md5((body[:100] + author).encode()).hexdigest()
+                    if body_hash in seen: continue
+                    seen.add(body_hash)
+                    review_id = hashlib.sha256(f"trustpilot:{slug}:{author}:{review_date.date()}:{body[:80]}".encode()).hexdigest()[:32]
+                    page_reviews.append(RawReview(
+                        review_id=review_id, platform=Platform.TRUSTPILOT,
+                        competitor_name=name, competitor_slug=slug,
+                        rating=min(5.0, max(1.0, rating)), title="", body=body[:3000],
+                        author=author, author_role=None, author_company=None,
+                        author_company_size=None, review_date=review_date,
+                        platform_url=url, raw_html_hash=body_hash,
+                    ))
+                except Exception:
+                    pass
+
         if not page_reviews:
             break
 

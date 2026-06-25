@@ -147,6 +147,14 @@ INDUSTRY_PLATFORMS = {
         ("sitejabber",   "SiteJabber",           "https://www.sitejabber.com/reviews/{domain}",        "generic"),
     ],
 
+    "gaming": [
+        ("trustpilot",   "Trustpilot",           "https://www.trustpilot.com/review/{domain}",        "trustpilot"),
+        ("reddit",       "Reddit",               "{name}",                                              "reddit"),
+        ("google",       "Google Reviews",       "https://maps.google.com/?q={name}+reviews",          "google"),
+        ("bbb",          "BBB",                  "https://www.bbb.org/search?find_text={name}",        "bbb"),
+        ("sitejabber",   "SiteJabber",           "https://www.sitejabber.com/reviews/{domain}",        "generic"),
+    ],
+
     # Default fallback for any industry
     "general": [
         ("trustpilot",   "Trustpilot",           "https://www.trustpilot.com/review/{domain}",        "trustpilot"),
@@ -171,6 +179,7 @@ INDUSTRY_KEYWORDS = {
     "legal_professional": ["law","legal","lawyer","attorney","accounting","consulting","advisory","firm"],
     "education":          ["school","university","college","education","training","bootcamp","course","academy"],
     "telecom":            ["telecom","wireless","internet","cable","mobile","phone","network","isp"],
+    "gaming":             ["game","games","gaming","studio","entertainment","esports","console","playstation","xbox","nintendo","steam","indie","blizzard","activision","ubisoft","rockstar","valve","riot","bungie","bethesda"],
     "ecommerce_retail":   ["store","shop","retail","ecommerce","marketplace","boutique","fashion","clothing"],
 }
 
