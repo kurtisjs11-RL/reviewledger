@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · ReviewLedger{% endblock %}
+
+{% block head %}
+<style>
+.hero{
+  background:var(--ink);padding:2.5rem 2.5rem 2rem;
+  border-bottom:1px solid #1a1a1a;
+}
+.hero h1{
+  font-family:var(--df);font-size:clamp(1.8rem,4vw,2.8rem);
+  font-weight:700;letter-spacing:-0.03em;color:#fff;margin-bottom:0.4rem;
+}
+.hero p{font-size:0.88rem;color:#666;max-width:500px;}
+
+.stats-row{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-bottom:1px solid var(--rule);background:var(--surface);
+}
+.stat{padding:1.2rem 1.5rem;border-right:1px solid var(--rule);}
+.stat:last-child{border-right:none;}
+.stat-val{
+  font-family:var(--df);font-size:2rem;font-weight:700;
+  letter-spacing:-0.03em;color:var(--ink);line-height:1;
+}
+.stat-lbl{font-family:var(--dm);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);margin-top:0.3rem;}
+
+.projects-header{
+  padding:1.2rem 2rem;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid var(--rule);
+}
+.projects-header h2{font-family:var(--df);font-size:1.1rem;font-weight:700;}
+.empty-state{
+  padding:4rem 2rem;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:1rem;
+}
+.empty-icon{font-size:2.5rem;opacity:0.3;}
+.empty-state h3{font-family:var(--df);font-size:1.3rem;font-weight:700;color:var(--ink);}
+.empty-state p{font-size:0.88rem;color:var(--mid);max-width:340px;}
+
+.project-list{display:flex;flex-direction:column;}
+.project-item{
+  padding:1.2rem 2rem;border-bottom:1px solid var(--rule);
+  display:grid;grid-template-columns:1fr auto;gap:1.5rem;
+  align-items:center;transition:background 0.1s;
+  text-decoration:none;color:inherit;
+}
+.project-item:hover{background:rgba(0,0,0,0.02);}
+.project-item:last-child{border-bottom:none;}
+
+.proj-name{font-family:var(--df);font-size:1rem;font-weight:700;letter-spacing:-0.01em;color:var(--ink);margin-bottom:0.2rem;}
+.proj-meta{font-size:0.78rem;color:var(--mid);display:flex;gap:1rem;flex-wrap:wrap;margin-top:0.3rem;}
+.proj-meta span{display:flex;align-items:center;gap:0.3rem;}
+
+.proj-stats{display:flex;gap:1rem;align-items:center;flex-shrink:0;}
+.proj-stat{display:flex;flex-direction:column;align-items:flex-end;gap:0.1rem;}
+.proj-stat-val{font-family:var(--dm);font-size:0.9rem;font-weight:500;color:var(--ink);}
+.proj-stat-lbl{font-family:var(--dm);font-size:0.54rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);}
+
+.status-dot{
+  width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0;
+}
+.dot-running{background:#F59E0B;animation:pulse 1.5s ease-in-out infinite;}
+.dot-done   {background:var(--praise);}
+.dot-error  {background:var(--pain);}
+.dot-pending{background:var(--mid);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+.alert-count{
+  background:var(--painl);color:var(--pain);
+  font-family:var(--dm);font-size:0.7rem;font-weight:500;
+  padding:0.15rem 0.5rem;border-radius:2px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+  <h1>Competitive Intelligence</h1>
+  <p>AI-powered review analysis across any competitor set. Real signals, live data, exportable reports.</p>
+</div>
+
+<!-- Global stats -->
+{% if projects %}
+{% set total_reviews = namespace(v=0) %}
+{% set total_alerts = namespace(v=0) %}
+{% set done_count = namespace(v=0) %}
+{% for p in projects %}
+  {% if p.status == 'done' %}
+    {% set done_count.v = done_count.v + 1 %}
+    {% if p.summary %}
+      {% set s = p.summary if p.summary is mapping else {} %}
+      {% set total_reviews.v = total_reviews.v + (s.total_reviews or 0) %}
+      {% set total_alerts.v = total_alerts.v + (s.total_alerts or 0) %}
+    {% endif %}
+  {% endif %}
+{% endfor %}
+<div class="stats-row">
+  <div class="stat">
+    <div class="stat-val">{{ projects|length }}</div>
+    <div class="stat-lbl">Total analyses</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">{{ done_count.v }}</div>
+    <div class="stat-lbl">Completed</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val">{{ total_reviews.v }}</div>
+    <div class="stat-lbl">Reviews classified</div>
+  </div>
+  <div class="stat">
+    <div class="stat-val" style="color:var(--pain)">{{ total_alerts.v }}</div>
+    <div class="stat-lbl">Active alerts</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="projects-header">
+  <h2>Analyses</h2>
+  <a href="/new" class="btn btn-primary">+ New Analysis</a>
+</div>
+
+{% if not projects %}
+<div class="empty-state">
+  <div class="empty-icon">📊</div>
+  <h3>No analyses yet</h3>
+  <p>Create your first competitive analysis to start tracking what your competitors' customers are saying.</p>
+  <a href="/new" class="btn btn-primary">+ New Analysis</a>
+</div>
+{% else %}
+<div class="project-list">
+  {% for p in projects %}
+  <a href="/project/{{ p.id }}" class="project-item">
+    <div>
+      <div class="proj-name">{{ p.name }}</div>
+      <div class="proj-meta">
+        <span>
+          <span class="status-dot dot-{{ p.status }}"></span>
+          {{ p.status|title }}
+        </span>
+        <span>{{ p.created_at[:10] }}</span>
+        <span>Last {{ p.timeline }} days</span>
+        {% set comps = p.competitors if p.competitors is iterable else [] %}
+        <span>{{ comps|length }} competitor{{ 's' if comps|length != 1 }}</span>
+      </div>
+    </div>
+    <div class="proj-stats">
+      {% if p.status == 'done' and p.summary %}
+        {% set s = p.summary if p.summary is mapping else {} %}
+        {% if s.total_alerts %}
+        <span class="alert-count">🚨 {{ s.total_alerts }} alert{{ 's' if s.total_alerts != 1 }}</span>
+        {% endif %}
+        <div class="proj-stat">
+          <span class="proj-stat-val">{{ s.total_reviews or 0 }}</span>
+          <span class="proj-stat-lbl">Reviews</span>
+        </div>
+        <div class="proj-stat">
+          <span class="proj-stat-val">{{ s.total_signals or 0 }}</span>
+          <span class="proj-stat-lbl">Signals</span>
+        </div>
+      {% elif p.status == 'running' %}
+        <span class="pill pill-amber">Running…</span>
+      {% elif p.status == 'error' %}
+        <span class="pill pill-red">Error</span>
+      {% endif %}
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

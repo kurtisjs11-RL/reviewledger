@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ data.subject }} · Competitive Intelligence Report</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,300&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#F5F2EC;--ink:#0E0D0B;--rule:#DDD9D0;--mid:#8A8680;--soft:#555048;--white:#FFFEFB;
+  --pain:#C0392B;--painl:#FAEAE8;--praise:#1A6B3A;--praisel:#E8F4ED;
+  --warn:#A05000;--warnl:#FDF2E7;--subj:#1B4E8A;--subjl:#E8EFF8;
+  --df:'Fraunces',serif;--db:'DM Sans',sans-serif;--dm:'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:var(--db);font-weight:300;line-height:1.6;}
+
+/* COVER */
+.cover{background:var(--ink);padding:3rem;border-bottom:4px solid var(--subj);}
+.cover-kicker{font-family:var(--dm);font-size:0.6rem;letter-spacing:0.18em;text-transform:uppercase;color:#444;margin-bottom:1.2rem;display:flex;gap:2rem;flex-wrap:wrap;}
+.cover-title{font-family:var(--df);font-size:clamp(2rem,5vw,3.8rem);font-weight:700;letter-spacing:-0.03em;color:#fff;max-width:860px;margin-bottom:0.8rem;line-height:1.05;}
+.cover-title em{font-style:italic;font-weight:300;color:#666;}
+.cover-sub{font-size:0.9rem;color:#555;max-width:600px;line-height:1.65;padding-top:1.2rem;border-top:1px solid #1a1a1a;margin-top:1.2rem;}
+
+/* SUBJECT HERO */
+.subj-hero{background:var(--subjl);border-bottom:2px solid var(--subj);padding:2rem 2.5rem;display:grid;grid-template-columns:1fr auto;gap:2rem;align-items:center;}
+.sh-left{}
+.sh-label{font-family:var(--dm);font-size:0.58rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--subj);margin-bottom:0.4rem;}
+.sh-name{font-family:var(--df);font-size:2rem;font-weight:700;letter-spacing:-0.025em;color:var(--ink);margin-bottom:0.5rem;}
+.sh-verdict{font-size:0.95rem;color:var(--soft);line-height:1.6;max-width:620px;}
+.sh-verdict strong{color:var(--ink);font-weight:500;}
+.sh-stats{display:flex;gap:1.5rem;flex-shrink:0;}
+.sh-stat{display:flex;flex-direction:column;align-items:center;gap:0.2rem;}
+.sh-stat-v{font-family:var(--df);font-size:2.2rem;font-weight:700;letter-spacing:-0.04em;line-height:1;}
+.sh-stat-v.pain{color:var(--pain);}
+.sh-stat-v.praise{color:var(--praise);}
+.sh-stat-v.neutral{color:var(--mid);}
+.sh-stat-l{font-family:var(--dm);font-size:0.52rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);}
+
+/* SCORECARD */
+.scorecard{display:grid;border-bottom:2px solid var(--ink);background:var(--white);}
+.sc-cell{padding:1.2rem 1.5rem;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:0.25rem;}
+.sc-cell:last-child{border-right:none;}
+.sc-name{font-family:var(--dm);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);margin-bottom:0.2rem;}
+.sc-company{font-weight:500;font-size:0.82rem;color:var(--ink);margin-bottom:0.3rem;}
+.sc-bar-wrap{height:3px;background:var(--rule);border-radius:2px;overflow:hidden;margin:0.2rem 0;}
+.sc-bar-fill{height:100%;border-radius:2px;transition:width 0.3s;}
+.sc-bar-fill.pain{background:var(--pain);}
+.sc-bar-fill.praise{background:var(--praise);}
+.sc-meta{font-size:0.7rem;color:var(--mid);display:flex;justify-content:space-between;}
+
+/* SECTION */
+.section{padding:2.5rem;border-bottom:1px solid var(--rule);}
+.section-alt{background:var(--white);}
+.ey{font-family:var(--dm);font-size:0.58rem;letter-spacing:0.18em;text-transform:uppercase;color:var(--mid);margin-bottom:0.8rem;display:flex;align-items:center;gap:0.8rem;}
+.ey::after{content:'';flex:1;height:1px;background:var(--rule);}
+.st{font-family:var(--df);font-size:1.4rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:1.2rem;line-height:1.2;}
+.sb{font-size:0.88rem;line-height:1.75;color:var(--soft);}
+.sb strong{color:var(--ink);font-weight:500;}
+.sb p+p{margin-top:0.8rem;}
+
+/* SUBJECT DEEP DIVE */
+.two-panel{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-top:1.2rem;}
+.panel{background:var(--white);border:1px solid var(--rule);border-radius:4px;overflow:hidden;}
+.panel-head{padding:0.8rem 1.2rem;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:0.5rem;}
+.panel-head.pain-head{background:var(--painl);}
+.panel-head.praise-head{background:var(--praisel);}
+.panel-title{font-family:var(--dm);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;}
+.panel-head.pain-head .panel-title{color:var(--pain);}
+.panel-head.praise-head .panel-title{color:var(--praise);}
+.panel-body{padding:1rem;}
+.sig-item{padding:0.65rem 0.8rem;border-radius:3px;margin-bottom:0.4rem;border:1px solid;}
+.sig-item.pain{background:var(--painl);border-color:rgba(192,57,43,0.2);}
+.sig-item.praise{background:var(--praisel);border-color:rgba(26,107,58,0.2);}
+.sig-item.trend{background:var(--warnl);border-color:rgba(160,80,0,0.2);}
+.sig-topic{font-family:var(--dm);font-size:0.52rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);margin-bottom:0.15rem;}
+.sig-head{font-size:0.8rem;font-weight:400;color:var(--ink);line-height:1.35;}
+.sig-body{font-size:0.75rem;color:var(--soft);margin-top:0.2rem;line-height:1.4;}
+.no-signal{font-size:0.8rem;color:var(--mid);font-style:italic;padding:0.5rem;}
+
+/* HEAT MAP */
+.heat-wrap{overflow-x:auto;margin-top:1.2rem;}
+.heat-table{width:100%;border-collapse:collapse;}
+.heat-table th{font-family:var(--dm);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);padding:0.5rem 0.8rem;border-bottom:2px solid var(--ink);text-align:left;background:var(--bg);}
+.heat-table th.subj-col{color:var(--subj);background:var(--subjl);}
+.heat-table th:not(:first-child){text-align:center;}
+.heat-table td{padding:0.65rem 0.8rem;border-bottom:1px solid var(--rule);font-size:0.8rem;text-align:center;vertical-align:middle;}
+.heat-table td:first-child{text-align:left;font-weight:500;color:var(--ink);}
+.heat-table tr:last-child td{border-bottom:none;}
+.h-crit{background:var(--painl);color:var(--pain);font-family:var(--dm);font-size:0.68rem;font-weight:500;}
+.h-warn{background:var(--warnl);color:var(--warn);font-family:var(--dm);font-size:0.68rem;font-weight:500;}
+.h-good{background:var(--praisel);color:var(--praise);font-family:var(--dm);font-size:0.68rem;font-weight:500;}
+.h-subj-crit{background:#fcd;color:var(--pain);font-family:var(--dm);font-size:0.68rem;font-weight:700;border-left:2px solid var(--subj);}
+.h-subj-warn{background:#ffe0c0;color:var(--warn);font-family:var(--dm);font-size:0.68rem;font-weight:700;border-left:2px solid var(--subj);}
+.h-subj-good{background:#c8f0d8;color:var(--praise);font-family:var(--dm);font-size:0.68rem;font-weight:700;border-left:2px solid var(--subj);}
+.h-none{background:#f0ede8;color:#bbb;font-family:var(--dm);font-size:0.68rem;}
+.h-subj-none{background:#e0e8f4;color:var(--subj);font-family:var(--dm);font-size:0.68rem;border-left:2px solid var(--subj);}
+
+/* COMPETITIVE GAP TABLE */
+.gap-table{width:100%;border-collapse:collapse;margin-top:1.2rem;font-size:0.84rem;}
+.gap-table th{font-family:var(--dm);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);text-align:left;padding:0.5rem 0.8rem;border-bottom:2px solid var(--ink);background:var(--bg);}
+.gap-table td{padding:0.8rem 0.8rem;border-bottom:1px solid var(--rule);color:var(--soft);vertical-align:top;line-height:1.5;}
+.gap-table td:first-child{color:var(--ink);font-weight:500;white-space:nowrap;}
+.gap-table tr:last-child td{border-bottom:none;}
+
+/* COMPETITOR CARDS */
+.comp-cards{display:flex;flex-direction:column;gap:1rem;margin-top:1.2rem;}
+.comp-card{background:var(--white);border:1px solid var(--rule);border-radius:4px;overflow:hidden;}
+.cc-header{padding:1rem 1.2rem;border-bottom:1px solid var(--rule);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;}
+.cc-name{font-family:var(--df);font-size:1.1rem;font-weight:700;letter-spacing:-0.02em;}
+.cc-stat-row{display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;}
+.cc-body{padding:1.2rem;display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+.cc-col-title{font-family:var(--dm);font-size:0.56rem;letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.5rem;}
+.cc-col-title.pain{color:var(--pain);}
+.cc-col-title.praise{color:var(--praise);}
+
+/* PILL */
+.pill{display:inline-block;font-family:var(--dm);font-size:0.54rem;letter-spacing:0.08em;text-transform:uppercase;padding:0.15rem 0.5rem;border-radius:2px;white-space:nowrap;}
+.pill-red{background:var(--painl);color:var(--pain);}
+.pill-green{background:var(--praisel);color:var(--praise);}
+.pill-amber{background:var(--warnl);color:var(--warn);}
+.pill-blue{background:var(--subjl);color:var(--subj);}
+.pill-grey{background:#eee;color:#888;}
+
+/* OPPORTUNITY SECTION */
+.opp-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-top:1.2rem;}
+.opp-card{background:var(--praisel);border:1px solid rgba(26,107,58,0.2);border-left:3px solid var(--praise);border-radius:3px;padding:1.2rem;display:flex;flex-direction:column;gap:0.5rem;}
+.opp-num{font-family:var(--dm);font-size:0.54rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--praise);}
+.opp-title{font-weight:500;font-size:0.9rem;color:var(--ink);line-height:1.3;}
+.opp-text{font-size:0.8rem;color:var(--soft);line-height:1.55;}
+
+/* BOTTOM LINE */
+.bottom-row{display:grid;border-top:2px solid var(--ink);}
+.bl-cell{padding:2rem;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:0.8rem;}
+.bl-cell:last-child{border-right:none;}
+.bl-cell.subject{background:var(--subjl);border-top:3px solid var(--subj);}
+.bl-label{font-family:var(--dm);font-size:0.56rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--mid);}
+.bl-label.subj{color:var(--subj);}
+.bl-verdict{font-family:var(--df);font-size:1rem;font-weight:700;letter-spacing:-0.01em;line-height:1.2;}
+.bl-body{font-size:0.8rem;color:var(--soft);line-height:1.6;}
+.bl-nums{display:flex;gap:1.2rem;flex-wrap:wrap;}
+.bl-num{display:flex;flex-direction:column;}
+.bl-num-v{font-family:var(--df);font-size:1.8rem;font-weight:700;letter-spacing:-0.03em;line-height:1;}
+.bl-num-l{font-family:var(--dm);font-size:0.52rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--mid);}
+
+footer{background:var(--ink);padding:1.5rem 2.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;}
+footer p{font-family:var(--dm);font-size:0.56rem;color:#444;letter-spacing:0.08em;}
+
+@media(max-width:760px){
+  .cover,.section{padding-left:1.2rem;padding-right:1.2rem;}
+  .subj-hero{grid-template-columns:1fr;}
+  .two-panel,.cc-body,.opp-grid{grid-template-columns:1fr;}
+  .bottom-row{grid-template-columns:1fr;}
+  .bl-cell{border-right:none;border-bottom:1px solid var(--rule);}
+  .scorecard{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+{% set subj = data.subject_data %}
+{% set comps = data.competitors %}
+{% set all_cos = data.companies %}
+{% set topics = ['support','pricing','reliability','security','onboarding','ux','features','integration','documentation','other'] %}
+{% set topic_labels = {'support':'Support','pricing':'Pricing','reliability':'Reliability','security':'Security','onboarding':'Onboarding','ux':'UX / Digital','features':'Features','integration':'Integrations','documentation':'Documentation','other':'General'} %}
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-kicker">
+    <span>ReviewLedger · Competitive Intelligence</span>
+    <span>{{ data.subject }} vs {{ comps|map(attribute='name')|join(', ') }}</span>
+    <span style="color:#333">{{ generated_at }}</span>
+  </div>
+  <h1 class="cover-title">
+    How {{ data.subject }} is positioned<br>
+    <em>in the eyes of its market</em>
+  </h1>
+  <p class="cover-sub">
+    AI-classified analysis of
+    {{ all_cos|sum(attribute='total_reviews') }} customer reviews
+    from Trustpilot and Reddit over the last {{ timeline }} days.
+    {{ data.subject }}'s strengths and weaknesses mapped against
+    {{ comps|length }} competitor{{ 's' if comps|length != 1 }}.
+  </p>
+</div>
+
+<!-- SUBJECT HERO -->
+{% if subj %}
+<div class="subj-hero">
+  <div class="sh-left">
+    <div class="sh-label">Subject company · Your firm</div>
+    <div class="sh-name">{{ subj.name }}</div>
+    <div class="sh-verdict">
+      {% if subj.total_reviews == 0 %}
+        <strong>No reviews found in this period.</strong> Either no Trustpilot page exists, Reddit mentions are limited, or the timeline is too narrow. Try extending the timeline or adding aliases.
+      {% elif subj.pain_rate >= 70 %}
+        <strong>High pain rate detected.</strong> {{ subj.pain_rate }}% of {{ subj.total_reviews }} reviews express negative sentiment. Priority areas: {{ subj.top_complaints[:3]|map(attribute=0)|join(', ') if subj.top_complaints else 'see signals below' }}.
+      {% elif subj.praise_rate >= 50 %}
+        <strong>Strong market position.</strong> {{ subj.praise_rate }}% of {{ subj.total_reviews }} reviews are positive. Key strengths: {{ subj.top_praises[:3]|map(attribute=0)|join(', ') if subj.top_praises else 'see signals below' }}.
+      {% else %}
+        Based on <strong>{{ subj.total_reviews }} reviews</strong>, {{ subj.name }} shows a mixed signal — {{ subj.praise_rate }}% praise and {{ subj.pain_rate }}% pain. Detailed breakdown below.
+      {% endif %}
+    </div>
+  </div>
+  <div class="sh-stats">
+    <div class="sh-stat">
+      <span class="sh-stat-v pain">{{ subj.pain_rate }}%</span>
+      <span class="sh-stat-l">Pain rate</span>
+    </div>
+    <div class="sh-stat">
+      <span class="sh-stat-v praise">{{ subj.praise_rate }}%</span>
+      <span class="sh-stat-l">Praise rate</span>
+    </div>
+    <div class="sh-stat">
+      <span class="sh-stat-v neutral">{{ subj.total_reviews }}</span>
+      <span class="sh-stat-l">Reviews</span>
+    </div>
+    <div class="sh-stat">
+      <span class="sh-stat-v {% if subj.alerts > 0 %}pain{% else %}neutral{% endif %}">{{ subj.alerts }}</span>
+      <span class="sh-stat-l">Alerts</span>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- SCORECARD STRIP -->
+<div class="scorecard" style="grid-template-columns:repeat({{ all_cos|length }},1fr);">
+  {% for co in all_cos %}
+  <div class="sc-cell" {% if co.is_subject %}style="background:var(--subjl);border-top:2px solid var(--subj);"{% endif %}>
+    <div class="sc-name">{% if co.is_subject %}★ Your firm{% else %}Competitor{% endif %}</div>
+    <div class="sc-company">{{ co.name }}</div>
+    <div class="sc-bar-wrap"><div class="sc-bar-fill pain" style="width:{{ co.pain_rate }}%"></div></div>
+    <div class="sc-bar-wrap"><div class="sc-bar-fill praise" style="width:{{ co.praise_rate }}%"></div></div>
+    <div class="sc-meta">
+      <span style="color:var(--pain)">{{ co.pain_rate }}% pain</span>
+      <span style="color:var(--praise)">{{ co.praise_rate }}% praise</span>
+    </div>
+    <div style="font-size:0.68rem;color:var(--mid);margin-top:0.2rem;">{{ co.total_reviews }} reviews{% if co.alerts > 0 %} · 🚨 {{ co.alerts }} alert{% endif %}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- SUBJECT DEEP DIVE -->
+{% if subj %}
+<div class="section section-alt">
+  <div class="ey">{{ data.subject }} · Your firm deep dive</div>
+  <div class="st">What customers are saying about {{ data.subject }}</div>
+  {% set subj_pain   = subj.signal_details|selectattr('type','in',['pain'])|sort(attribute='intensity',reverse=True)|list %}
+  {% set subj_praise = subj.signal_details|selectattr('type','equalto','praise')|sort(attribute='intensity',reverse=True)|list %}
+  <div class="two-panel">
+    <div class="panel">
+      <div class="panel-head pain-head">
+        <span class="panel-title">⚠ Weaknesses — what's going wrong</span>
+      </div>
+      <div class="panel-body">
+        {% if subj_pain %}
+          {% for s in subj_pain[:6] %}
+          <div class="sig-item pain">
+            <div class="sig-topic">{{ s.topic }}{% if s.is_alert %} · 🚨 Alert{% endif %}</div>
+            <div class="sig-head">{{ s.headline }}</div>
+            {% if s.body %}<div class="sig-body">{{ s.body[:200] }}{% if s.body|length > 200 %}…{% endif %}</div>{% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-signal">No significant pain signals in this period.</div>
+        {% endif %}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-head praise-head">
+        <span class="panel-title">✓ Strengths — what's going right</span>
+      </div>
+      <div class="panel-body">
+        {% if subj_praise %}
+          {% for s in subj_praise[:6] %}
+          <div class="sig-item praise">
+            <div class="sig-topic">{{ s.topic }}</div>
+            <div class="sig-head">{{ s.headline }}</div>
+            {% if s.body %}<div class="sig-body">{{ s.body[:200] }}{% if s.body|length > 200 %}…{% endif %}</div>{% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="no-signal">No significant praise signals in this period.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- HEAT MAP -->
+<div class="section">
+  <div class="ey">Signal heat map · All companies</div>
+  <div class="st">{{ data.subject }} vs competitors — category by category</div>
+  <div class="sb">
+    <p>Each cell shows the dominant signal for that company in that category. <strong>{{ data.subject }}'s column is highlighted</strong> so you can instantly see where you lead, where you lag, and where competitors are vulnerable.</p>
+  </div>
+  <div class="heat-wrap">
+    <table class="heat-table">
+      <thead>
+        <tr>
+          <th>Category</th>
+          {% for co in all_cos %}
+          <th {% if co.is_subject %}class="subj-col"{% endif %}>{% if co.is_subject %}★ {% endif %}{{ co.name }}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+      {% for topic in topics %}
+      <tr>
+        <td>{{ topic_labels[topic] }}</td>
+        {% for co in all_cos %}
+          {% set topic_sigs  = co.signal_details|selectattr('topic','equalto',topic)|list %}
+          {% set alert_sigs  = topic_sigs|selectattr('is_alert')|list %}
+          {% set pain_sigs   = topic_sigs|selectattr('type','equalto','pain')|list %}
+          {% set praise_sigs = topic_sigs|selectattr('type','equalto','praise')|list %}
+          {% if co.is_subject %}
+            {% if alert_sigs %}
+              <td class="h-subj-crit">🚨 {{ '%.1f'|format(alert_sigs[0].intensity) }}</td>
+            {% elif pain_sigs %}
+              <td class="h-subj-warn">⚠ {{ '%.1f'|format(pain_sigs[0].intensity) }}</td>
+            {% elif praise_sigs %}
+              <td class="h-subj-good">✓ {{ '%.1f'|format(praise_sigs[0].intensity) }}</td>
+            {% else %}
+              <td class="h-subj-none">—</td>
+            {% endif %}
+          {% else %}
+            {% if alert_sigs %}
+              <td class="h-crit">🚨 {{ '%.1f'|format(alert_sigs[0].intensity) }}</td>
+            {% elif pain_sigs %}
+              <td class="h-warn">⚠ {{ '%.1f'|format(pain_sigs[0].intensity) }}</td>
+            {% elif praise_sigs %}
+              <td class="h-good">✓ {{ '%.1f'|format(praise_sigs[0].intensity) }}</td>
+            {% else %}
+              <td class="h-none">—</td>
+            {% endif %}
+          {% endif %}
+        {% endfor %}
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- COMPETITIVE GAP ANALYSIS -->
+<div class="section section-alt">
+  <div class="ey">Competitive gap analysis</div>
+  <div class="st">Where {{ data.subject }} leads — and where it trails</div>
+  <table class="gap-table">
+    <thead>
+      <tr>
+        <th>Category</th>
+        <th>{{ data.subject }} signal</th>
+        <th>Market average</th>
+        <th>Implication</th>
+      </tr>
+    </thead>
+    <tbody>
+    {% for topic in topics %}
+      {% if subj %}
+        {% set subj_sigs   = subj.signal_details|selectattr('topic','equalto',topic)|list %}
+        {% set subj_alert  = subj_sigs|selectattr('is_alert')|list %}
+        {% set subj_pain   = subj_sigs|selectattr('type','equalto','pain')|list %}
+        {% set subj_praise = subj_sigs|selectattr('type','equalto','praise')|list %}
+
+        {% set comp_pain_count   = 0 %}
+        {% set comp_praise_count = 0 %}
+        {% for co in comps %}
+          {% set co_sigs = co.signal_details|selectattr('topic','equalto',topic)|list %}
+          {% if co_sigs|selectattr('type','equalto','pain')|list %}{% set comp_pain_count = comp_pain_count + 1 %}{% endif %}
+          {% if co_sigs|selectattr('type','equalto','praise')|list %}{% set comp_praise_count = comp_praise_count + 1 %}{% endif %}
+        {% endfor %}
+
+        {% if subj_sigs or comp_pain_count > 0 or comp_praise_count > 0 %}
+        <tr>
+          <td>{{ topic_labels[topic] }}</td>
+          <td>
+            {% if subj_alert %}
+              <span class="pill pill-red">🚨 Alert</span>
+            {% elif subj_pain %}
+              <span class="pill pill-amber">⚠ Pain signal</span>
+            {% elif subj_praise %}
+              <span class="pill pill-green">✓ Strength</span>
+            {% else %}
+              <span class="pill pill-grey">No signal</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if comp_pain_count > comp_praise_count %}
+              <span class="pill pill-amber">⚠ {{ comp_pain_count }}/{{ comps|length }} in pain</span>
+            {% elif comp_praise_count > 0 %}
+              <span class="pill pill-green">✓ {{ comp_praise_count }}/{{ comps|length }} praised</span>
+            {% else %}
+              <span class="pill pill-grey">Mixed</span>
+            {% endif %}
+          </td>
+          <td style="font-size:0.82rem;color:var(--soft);">
+            {% if subj_praise and comp_pain_count > 0 %}
+              <strong style="color:var(--praise)">Competitive advantage.</strong> You have strength here where competitors struggle. Leverage this in positioning.
+            {% elif subj_pain and comp_praise_count > 0 %}
+              <strong style="color:var(--pain)">Competitive gap.</strong> Competitors praised here while you show pain. Priority area for improvement.
+            {% elif subj_alert %}
+              <strong style="color:var(--pain)">Urgent.</strong> Alert-level signal — requires immediate attention regardless of competitor position.
+            {% elif subj_pain and comp_pain_count >= comps|length %}
+              Industry-wide issue. Improvement here delivers above-market differentiation.
+            {% elif subj_praise and comp_praise_count >= comps|length %}
+              Table stakes. All players performing here — maintain but not a differentiator.
+            {% elif not subj_sigs %}
+              Insufficient data. Extend timeline or add more review sources.
+            {% else %}
+              Monitor. Signal present but not definitive.
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<!-- COMPETITOR DEEP DIVES -->
+<div class="section">
+  <div class="ey">Competitor analysis</div>
+  <div class="st">What's happening at each competitor</div>
+  <div class="comp-cards">
+  {% for co in comps %}
+    {% set pain_sigs   = co.signal_details|selectattr('type','equalto','pain')|sort(attribute='intensity',reverse=True)|list %}
+    {% set praise_sigs = co.signal_details|selectattr('type','equalto','praise')|sort(attribute='intensity',reverse=True)|list %}
+    {% set alert_sigs  = co.signal_details|selectattr('is_alert')|list %}
+    <div class="comp-card">
+      <div class="cc-header">
+        <div class="cc-name">{{ co.name }}</div>
+        <div class="cc-stat-row">
+          <span class="pill pill-red">{{ co.pain_rate }}% pain</span>
+          <span class="pill pill-green">{{ co.praise_rate }}% praise</span>
+          <span class="pill pill-grey">{{ co.total_reviews }} reviews</span>
+          {% if alert_sigs %}<span class="pill pill-red">🚨 {{ alert_sigs|length }} alert{{ 's' if alert_sigs|length != 1 }}</span>{% endif %}
+        </div>
+      </div>
+      <div class="cc-body">
+        <div>
+          <div class="cc-col-title pain">⚠ Weaknesses — displacement opportunities for {{ data.subject }}</div>
+          {% if pain_sigs %}
+            {% for s in pain_sigs[:5] %}
+            <div class="sig-item pain">
+              <div class="sig-topic">{{ s.topic }}{% if s.is_alert %} · 🚨{% endif %}</div>
+              <div class="sig-head">{{ s.headline }}</div>
+              {% if s.body %}<div class="sig-body">{{ s.body[:160] }}…</div>{% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="no-signal">No significant pain signals detected.</div>
+          {% endif %}
+        </div>
+        <div>
+          <div class="cc-col-title praise">✓ Strengths — benchmarks for {{ data.subject }}</div>
+          {% if praise_sigs %}
+            {% for s in praise_sigs[:5] %}
+            <div class="sig-item praise">
+              <div class="sig-topic">{{ s.topic }}</div>
+              <div class="sig-head">{{ s.headline }}</div>
+              {% if s.body %}<div class="sig-body">{{ s.body[:160] }}…</div>{% endif %}
+            </div>
+            {% endfor %}
+          {% else %}
+            <div class="no-signal">No significant praise signals detected.</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+</div>
+
+<!-- OPPORTUNITIES FOR SUBJECT -->
+{% if subj and comps %}
+<div class="section section-alt">
+  <div class="ey">Strategic opportunities for {{ data.subject }}</div>
+  <div class="st">Where {{ data.subject }} can win market share</div>
+  <div class="sb">
+    <p>These opportunities are derived directly from competitor pain signals. Where competitors' customers are complaining, {{ data.subject }} has an opening — if it doesn't share the same weakness.</p>
+  </div>
+  <div class="opp-grid">
+    {% set opp_num = namespace(v=0) %}
+    {% for co in comps %}
+      {% for s in co.signal_details if s.type == 'pain' and s.intensity >= 0.7 %}
+        {% set opp_num.v = opp_num.v + 1 %}
+        {% if opp_num.v <= 6 %}
+        <div class="opp-card">
+          <div class="opp-num">Opportunity {{ opp_num.v }} · vs {{ co.name }}</div>
+          <div class="opp-title">{{ s.headline }}</div>
+          <div class="opp-text">{{ co.name }}'s customers are reporting pain in <strong>{{ s.topic }}</strong>. If {{ data.subject }} performs better here, this is an active displacement opportunity worth addressing in sales and marketing positioning.</div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+    {% if opp_num.v == 0 %}
+    <div class="opp-card" style="grid-column:1/-1;">
+      <div class="opp-num">Note</div>
+      <div class="opp-title">Insufficient signal data for opportunity mapping</div>
+      <div class="opp-text">Extend the timeline or add more competitors to generate displacement opportunities.</div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- BOTTOM LINE -->
+<div class="bottom-row" style="grid-template-columns:repeat({{ all_cos|length }},1fr);">
+{% for co in all_cos %}
+  <div class="bl-cell {% if co.is_subject %}subject{% endif %}">
+    <div class="bl-label {% if co.is_subject %}subj{% endif %}">{% if co.is_subject %}★ Your firm{% else %}Competitor{% endif %}</div>
+    <div style="font-weight:500;font-size:0.9rem;color:var(--ink);">{{ co.name }}</div>
+    <div class="bl-verdict">
+      {% if co.pain_rate >= 75 %}Operational crisis — urgent action needed
+      {% elif co.pain_rate >= 55 %}Significant pain — investigate priority areas
+      {% elif co.pain_rate >= 35 %}Mixed signals — monitor and improve
+      {% elif co.praise_rate >= 50 %}Strong position — maintain and extend lead
+      {% else %}Emerging position — build on strengths
+      {% endif %}
+    </div>
+    <div class="bl-body">
+      {% if co.alerts > 0 %}<span style="color:var(--pain);">🚨 {{ co.alerts }} active alert{{ 's' if co.alerts != 1 }}.</span> {% endif %}
+      {{ co.total_reviews }} reviews analysed · {{ co.praise_rate }}% positive.
+    </div>
+    <div class="bl-nums">
+      <div class="bl-num">
+        <span class="bl-num-v" style="color:{% if co.pain_rate>=55 %}var(--pain){% elif co.pain_rate>=35 %}var(--warn){% else %}var(--praise){% endif %}">{{ co.pain_rate }}%</span>
+        <span class="bl-num-l">Pain rate</span>
+      </div>
+      <div class="bl-num">
+        <span class="bl-num-v" style="color:var(--praise)">{{ co.praise_rate }}%</span>
+        <span class="bl-num-l">Praise rate</span>
+      </div>
+      <div class="bl-num">
+        <span class="bl-num-v" style="color:{% if co.alerts>0 %}var(--pain){% else %}var(--mid){% endif %}">{{ co.alerts }}</span>
+        <span class="bl-num-l">Alerts</span>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+</div>
+
+<footer>
+  <p>ReviewLedger · {{ data.subject }} Competitive Intelligence · {{ generated_at }}</p>
+  <p>{{ all_cos|sum(attribute='total_reviews') }} reviews · Trustpilot + Reddit · Last {{ timeline }} days</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} · ReviewLedger{% endblock %}
+
+{% block head %}
+<style>
+.proj-header{
+  background:var(--ink);padding:2rem 2.5rem;
+  display:flex;align-items:flex-start;justify-content:space-between;gap:2rem;flex-wrap:wrap;
+}
+.proj-header-left h1{
+  font-family:var(--df);font-size:1.6rem;font-weight:700;
+  letter-spacing:-0.025em;color:#fff;margin-bottom:0.3rem;
+}
+.proj-header-meta{
+  font-family:var(--dm);font-size:0.62rem;letter-spacing:0.1em;
+  text-transform:uppercase;color:#555;display:flex;gap:1.2rem;flex-wrap:wrap;
+}
+.proj-header-meta span{color:#888;}
+.proj-header-actions{display:flex;gap:0.5rem;align-items:center;}
+
+/* PROGRESS */
+.progress-section{
+  background:var(--surface);border-bottom:1px solid var(--rule);
+  padding:1.5rem 2.5rem;
+}
+.progress-bar-wrap{
+  height:4px;background:var(--rule);border-radius:2px;overflow:hidden;
+  margin-bottom:1.2rem;
+}
+.progress-bar-fill{
+  height:100%;background:linear-gradient(90deg,var(--blue),var(--praise));
+  border-radius:2px;transition:width 0.5s ease;
+}
+.log-box{
+  background:var(--ink);border-radius:4px;padding:1rem 1.2rem;
+  max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:0.25rem;
+  font-family:var(--dm);font-size:0.75rem;
+}
+.log-line{display:flex;gap:0.8rem;line-height:1.4;}
+.log-ts{color:#444;flex-shrink:0;width:80px;}
+.log-msg{color:#aaa;flex:1;}
+.log-msg.alert{color:var(--pain);}
+.log-msg.warning{color:var(--warn);}
+.log-msg.error{color:var(--pain);}
+.log-msg.info{color:#888;}
+
+/* STATUS BADGES */
+.status-bar{
+  display:flex;align-items:center;gap:1rem;margin-bottom:0.8rem;
+  font-size:0.85rem;
+}
+.pulse-dot{
+  width:8px;height:8px;border-radius:50%;flex-shrink:0;
+}
+.pulse-running{background:#F59E0B;animation:pulse 1.2s ease-in-out infinite;}
+.pulse-done   {background:var(--praise);}
+.pulse-error  {background:var(--pain);}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+/* SUMMARY CARDS */
+.summary-grid{
+  display:grid;grid-template-columns:repeat(4,1fr);
+  border-bottom:1px solid var(--rule);
+  background:var(--surface);
+}
+.sum-cell{
+  padding:1.2rem 1.5rem;border-right:1px solid var(--rule);
+}
+.sum-cell:last-child{border-right:none;}
+.sum-val{
+  font-family:var(--df);font-size:2rem;font-weight:700;
+  letter-spacing:-0.03em;line-height:1;color:var(--ink);
+}
+.sum-val.red{color:var(--pain);}
+.sum-lbl{
+  font-family:var(--dm);font-size:0.56rem;letter-spacing:0.12em;
+  text-transform:uppercase;color:var(--mid);margin-top:0.3rem;
+}
+
+/* REPORT FRAME */
+.report-actions{
+  padding:1rem 2.5rem;background:var(--surface);
+  border-bottom:1px solid var(--rule);
+  display:flex;gap:0.75rem;align-items:center;
+}
+.report-frame-wrap{
+  background:var(--bg);
+}
+iframe{
+  width:100%;border:none;
+  min-height:calc(100vh - 200px);
+}
+
+/* WAITING STATE */
+.waiting-state{
+  padding:3rem;text-align:center;
+  display:flex;flex-direction:column;align-items:center;gap:0.8rem;
+}
+.waiting-state h3{font-family:var(--df);font-size:1.2rem;color:var(--ink);}
+.waiting-state p{font-size:0.85rem;color:var(--mid);}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="proj-header">
+  <div class="proj-header-left">
+    <h1>{{ project.name }}</h1>
+    <div class="proj-header-meta">
+      <span>Subject: {{ project.subject }}</span>
+      <span>{{ project.competitors|length }} competitor{{ 's' if project.competitors|length != 1 }}</span>
+      <span>Last {{ project.timeline }} days</span>
+      <span>{{ project.created_at[:10] }}</span>
+    </div>
+  </div>
+  <div class="proj-header-actions">
+    {% if project.status == 'done' %}
+    <a href="/project/{{ project.id }}/export" class="btn btn-outline" style="color:#fff;border-color:#333;">
+      ↓ Export HTML
+    </a>
+    {% endif %}
+    <button class="btn" style="background:#1a1a1a;color:#666;font-size:0.75rem;"
+      onclick="if(confirm('Delete this project?'))fetch('/project/{{ project.id }}/delete',{method:'POST'}).then(()=>window.location='/')">
+      Delete
+    </button>
+  </div>
+</div>
+
+<!-- Live progress (always shown, collapses when done) -->
+<div class="progress-section" id="progress-section">
+  <div class="status-bar">
+    <div class="pulse-dot" id="status-dot" style="background:
+      {% if project.status == 'done' %}var(--praise)
+      {% elif project.status == 'error' %}var(--pain)
+      {% else %}#F59E0B{% endif %};"
+      class="{% if project.status == 'running' %}pulse-running{% endif %}"
+    ></div>
+    <span id="status-text">
+      {% if project.status == 'done' %}Analysis complete
+      {% elif project.status == 'error' %}Pipeline error
+      {% elif project.status == 'running' %}Running analysis…
+      {% else %}Starting…{% endif %}
+    </span>
+    <span id="progress-pct" style="font-family:var(--dm);font-size:0.75rem;color:var(--mid);margin-left:auto;">
+      {% if project.status == 'done' %}100%{% endif %}
+    </span>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-bar" style="width:{% if project.status=='done' %}100{% elif project.status=='error' %}100{% else %}5{% endif %}%;
+      {% if project.status=='error' %}background:var(--pain);{% endif %}"></div>
+  </div>
+
+  <div class="log-box" id="log-box">
+    <div class="log-line"><span class="log-ts">—</span><span class="log-msg">Loading logs…</span></div>
+  </div>
+</div>
+
+<!-- Summary stats (shown when done) -->
+<div id="summary-section" style="display:{% if project.status=='done' %}block{% else %}none{% endif %}">
+  {% if project.summary and project.status == 'done' %}
+  <div class="summary-grid">
+    <div class="sum-cell">
+      <div class="sum-val">{{ project.summary.get('total_reviews', 0) }}</div>
+      <div class="sum-lbl">Reviews classified</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-val">{{ project.summary.get('competitors', 0) }}</div>
+      <div class="sum-lbl">Competitors analysed</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-val">{{ project.summary.get('total_signals', 0) }}</div>
+      <div class="sum-lbl">Intelligence signals</div>
+    </div>
+    <div class="sum-cell">
+      <div class="sum-val red">{{ project.summary.get('total_alerts', 0) }}</div>
+      <div class="sum-lbl">Active alerts</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Report view -->
+<div id="report-section" style="display:{% if project.status=='done' %}block{% else %}none{% endif %}">
+  {% if project.status == 'done' %}
+  <div class="report-actions">
+    <span style="font-size:0.82rem;color:var(--mid);">Comparative Analysis Report</span>
+    <a href="/project/{{ project.id }}/export" class="btn btn-primary" style="margin-left:auto;">
+      ↓ Export as HTML
+    </a>
+    <a href="/project/{{ project.id }}/report" target="_blank" class="btn btn-outline">
+      Open in new tab ↗
+    </a>
+  </div>
+  <div class="report-frame-wrap">
+    <iframe id="report-frame" src="/project/{{ project.id }}/report" onload="resizeFrame(this)"></iframe>
+  </div>
+  {% else %}
+  <div class="waiting-state" id="waiting-state">
+    <div style="font-size:2rem">⏳</div>
+    <h3>Report generating…</h3>
+    <p>The report will appear here automatically when the pipeline completes.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+const projectId   = "{{ project.id }}";
+const isDone      = "{{ project.status }}" === "done";
+const isError     = "{{ project.status }}" === "error";
+let   lastLogId   = 0;
+let   pollInterval;
+
+function resizeFrame(frame) {
+  try {
+    frame.style.height = frame.contentWindow.document.body.scrollHeight + 40 + 'px';
+  } catch(e) {}
+}
+
+function formatTs(ts) {
+  try { return ts.slice(11,19); } catch(e) { return ts; }
+}
+
+function appendLogs(logs) {
+  const box = document.getElementById('log-box');
+  if (logs.length === 0) return;
+
+  if (lastLogId === 0) box.innerHTML = '';
+
+  logs.forEach(l => {
+    const div = document.createElement('div');
+    div.className = 'log-line';
+    const cls = ['alert','warning','error'].includes(l.level) ? l.level : 'info';
+    div.innerHTML = `<span class="log-ts">${formatTs(l.ts)}</span><span class="log-msg ${cls}">${escHtml(l.msg)}</span>`;
+    box.appendChild(div);
+    if (l.id > lastLogId) lastLogId = l.id;
+  });
+
+  box.scrollTop = box.scrollHeight;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function poll() {
+  try {
+    const res  = await fetch(`/api/project/${projectId}/status?since=${lastLogId}`);
+    const data = await res.json();
+
+    appendLogs(data.logs || []);
+
+    // Update progress bar
+    const pct = data.progress || 0;
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+
+    if (data.status === 'done') {
+      clearInterval(pollInterval);
+      document.getElementById('status-dot').style.background = 'var(--praise)';
+      document.getElementById('status-dot').style.animation = 'none';
+      document.getElementById('status-text').textContent = 'Analysis complete';
+      document.getElementById('progress-pct').textContent = '100%';
+
+      // Show summary
+      if (data.summary) {
+        showSummary(data.summary);
+      }
+
+      // Load the report in iframe
+      setTimeout(() => {
+        document.getElementById('waiting-state') && (document.getElementById('waiting-state').style.display='none');
+        document.getElementById('summary-section').style.display = 'block';
+        document.getElementById('report-section').style.display  = 'block';
+
+        const rf = document.getElementById('report-frame');
+        if (!rf) {
+          // Inject iframe
+          const wrap = document.createElement('div');
+          wrap.innerHTML = `
+            <div class="report-actions">
+              <span style="font-size:0.82rem;color:var(--mid);">Comparative Analysis Report</span>
+              <a href="/project/${projectId}/export" class="btn btn-primary" style="margin-left:auto;">↓ Export as HTML</a>
+              <a href="/project/${projectId}/report" target="_blank" class="btn btn-outline">Open in new tab ↗</a>
+            </div>
+            <div class="report-frame-wrap">
+              <iframe src="/project/${projectId}/report" onload="resizeFrame(this)" style="width:100%;border:none;min-height:calc(100vh - 200px);"></iframe>
+            </div>
+          `;
+          document.getElementById('report-section').appendChild(wrap);
+        } else {
+          rf.src = `/project/${projectId}/report`;
+        }
+      }, 800);
+
+    } else if (data.status === 'error') {
+      clearInterval(pollInterval);
+      document.getElementById('status-dot').style.background = 'var(--pain)';
+      document.getElementById('status-dot').style.animation = 'none';
+      document.getElementById('status-text').textContent = 'Pipeline error — check logs above';
+      document.getElementById('progress-bar').style.background = 'var(--pain)';
+    }
+
+  } catch(e) {
+    console.error('Poll error:', e);
+  }
+}
+
+function showSummary(s) {
+  const sec = document.getElementById('summary-section');
+  sec.style.display = 'block';
+  sec.innerHTML = `
+    <div class="summary-grid">
+      <div class="sum-cell"><div class="sum-val">${s.total_reviews||0}</div><div class="sum-lbl">Reviews classified</div></div>
+      <div class="sum-cell"><div class="sum-val">${s.competitors||0}</div><div class="sum-lbl">Competitors analysed</div></div>
+      <div class="sum-cell"><div class="sum-val">${s.total_signals||0}</div><div class="sum-lbl">Intelligence signals</div></div>
+      <div class="sum-cell"><div class="sum-val red">${s.total_alerts||0}</div><div class="sum-lbl">Active alerts</div></div>
+    </div>
+  `;
+}
+
+// Start polling if not already done
+if (!isDone && !isError) {
+  poll();
+  pollInterval = setInterval(poll, 2500);
+} else {
+  // Load existing logs
+  fetch(`/api/project/${projectId}/status?since=0`).then(r=>r.json()).then(d => appendLogs(d.logs||[]));
+}
+</script>
+{% endblock %}

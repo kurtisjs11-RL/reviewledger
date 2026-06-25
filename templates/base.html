@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{% block title %}ReviewLedger{% endblock %}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;1,9..144,300&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root {
+  --bg:     #F5F2EC;
+  --ink:    #0E0D0B;
+  --rule:   #DDD9D0;
+  --mid:    #8A8680;
+  --soft:   #555048;
+  --white:  #FFFEFB;
+  --surface:#FFFEFB;
+  --pain:   #C0392B;
+  --painl:  #FAEAE8;
+  --praise: #1A6B3A;
+  --praisel:#E8F4ED;
+  --warn:   #A05000;
+  --warnl:  #FDF2E7;
+  --blue:   #1B4E8A;
+  --bluel:  #E8EFF8;
+  --df:     'Fraunces',serif;
+  --db:     'DM Sans',sans-serif;
+  --dm:     'DM Mono',monospace;
+}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--ink);font-family:var(--db);font-weight:300;line-height:1.6;min-height:100vh;display:flex;flex-direction:column;}
+
+/* NAV */
+nav{
+  background:var(--ink);padding:0 2rem;
+  display:flex;align-items:center;gap:2rem;height:52px;
+  border-bottom:2px solid;
+  border-image:linear-gradient(90deg,#C0392B 33%,#1A6B3A 33% 66%,#1B4E8A 66%) 1;
+  position:sticky;top:0;z-index:100;
+}
+.nav-brand{
+  font-family:var(--df);font-weight:700;font-size:1.1rem;
+  letter-spacing:-0.02em;color:#fff;text-decoration:none;
+}
+.nav-links{display:flex;gap:0.2rem;margin-left:auto;}
+.nav-link{
+  font-family:var(--dm);font-size:0.6rem;letter-spacing:0.1em;
+  text-transform:uppercase;color:#666;text-decoration:none;
+  padding:0.3rem 0.8rem;border-radius:3px;transition:color 0.15s;
+}
+.nav-link:hover{color:#fff;}
+.nav-btn{
+  font-family:var(--dm);font-size:0.6rem;letter-spacing:0.1em;
+  text-transform:uppercase;background:var(--blue);color:#fff;
+  text-decoration:none;padding:0.4rem 0.9rem;border-radius:3px;
+  margin-left:0.5rem;transition:opacity 0.15s;
+}
+.nav-btn:hover{opacity:0.85;}
+
+/* CONTENT */
+.content{flex:1;}
+
+/* FOOTER */
+.site-footer{
+  background:var(--ink);padding:1.2rem 2rem;
+  display:flex;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;
+}
+.site-footer p{font-family:var(--dm);font-size:0.56rem;color:#444;letter-spacing:0.08em;}
+
+/* SHARED COMPONENTS */
+.pill{
+  display:inline-block;font-family:var(--dm);font-size:0.54rem;
+  letter-spacing:0.08em;text-transform:uppercase;
+  padding:0.15rem 0.5rem;border-radius:2px;white-space:nowrap;
+}
+.pill-red   {background:var(--painl); color:var(--pain);}
+.pill-green {background:var(--praisel);color:var(--praise);}
+.pill-amber {background:var(--warnl); color:var(--warn);}
+.pill-blue  {background:var(--bluel); color:var(--blue);}
+.pill-grey  {background:#eee;color:#888;}
+
+.btn{
+  display:inline-flex;align-items:center;gap:0.4rem;
+  font-family:var(--dm);font-size:0.82rem;font-weight:500;
+  padding:0.55rem 1.2rem;border-radius:4px;cursor:pointer;
+  border:none;text-decoration:none;transition:opacity 0.15s;
+}
+.btn:hover{opacity:0.85;}
+.btn-primary{background:var(--ink);color:#fff;}
+.btn-danger {background:var(--pain);color:#fff;}
+.btn-outline{background:transparent;color:var(--ink);border:1px solid var(--rule);}
+.btn-outline:hover{background:var(--rule);}
+
+.card{
+  background:var(--surface);border:1px solid var(--rule);
+  border-radius:4px;overflow:hidden;
+}
+
+.mono{font-family:var(--dm);font-size:0.78rem;}
+.muted{color:var(--mid);}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-brand">ReviewLedger</a>
+  <div class="nav-links">
+    <a href="/" class="nav-link">Dashboard</a>
+    <a href="/new" class="nav-btn">+ New Analysis</a>
+  </div>
+</nav>
+
+<div class="content">
+  {% block content %}{% endblock %}
+</div>
+
+<footer class="site-footer">
+  <p>ReviewLedger · Competitive Intelligence Platform</p>
+  <p>AI-powered review analysis · Trustpilot · Reddit</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% block title %}New Analysis · ReviewLedger{% endblock %}
+
+{% block head %}
+<style>
+.form-wrap{max-width:680px;margin:0 auto;padding:2.5rem 2rem;}
+.form-title{font-family:var(--df);font-size:1.8rem;font-weight:700;letter-spacing:-0.025em;margin-bottom:0.4rem;}
+.form-sub{font-size:0.88rem;color:var(--mid);margin-bottom:2.5rem;line-height:1.6;}
+
+.form-section{margin-bottom:2rem;}
+.form-section-title{font-family:var(--dm);font-size:0.6rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--mid);margin-bottom:0.8rem;padding-bottom:0.5rem;border-bottom:1px solid var(--rule);}
+
+.form-row{margin-bottom:1rem;}
+label{display:block;font-size:0.82rem;font-weight:500;color:var(--soft);margin-bottom:0.35rem;}
+label .hint{font-weight:300;color:var(--mid);}
+input[type=text]{width:100%;padding:0.6rem 0.85rem;border:1px solid var(--rule);border-radius:4px;background:var(--white);color:var(--ink);font-family:var(--db);font-size:0.88rem;font-weight:300;outline:none;transition:border-color 0.15s;}
+input:focus{border-color:var(--ink);}
+
+/* TIMELINE */
+.timeline-options{display:flex;gap:0.5rem;flex-wrap:wrap;}
+.timeline-opt{padding:0.45rem 1rem;border:1px solid var(--rule);border-radius:4px;background:var(--white);cursor:pointer;font-size:0.82rem;transition:all 0.15s;user-select:none;}
+.timeline-opt.selected,.timeline-opt:hover{background:var(--ink);color:#fff;border-color:var(--ink);}
+
+/* COMPETITOR CARDS */
+.competitors-list{display:flex;flex-direction:column;gap:0.75rem;}
+.comp-card{background:var(--white);border:1px solid var(--rule);border-radius:4px;overflow:hidden;}
+.comp-card-header{padding:0.65rem 1rem;background:var(--bg);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--rule);}
+.comp-num{font-family:var(--dm);font-size:0.58rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--mid);}
+.comp-card-body{padding:1rem;display:flex;flex-direction:column;gap:0.7rem;}
+.remove-btn{background:none;border:none;cursor:pointer;font-size:0.75rem;color:var(--mid);padding:0.2rem 0.5rem;border-radius:3px;transition:color 0.15s;}
+.remove-btn:hover{color:var(--pain);}
+
+.add-comp-btn{width:100%;padding:0.65rem;border:1px dashed var(--rule);background:transparent;border-radius:4px;cursor:pointer;font-family:var(--db);font-size:0.85rem;color:var(--mid);transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.4rem;}
+.add-comp-btn:hover{border-color:var(--ink);color:var(--ink);background:var(--white);}
+
+.form-actions{display:flex;align-items:center;gap:1rem;margin-top:2rem;padding-top:1.5rem;border-top:1px solid var(--rule);}
+.form-error{padding:0.8rem 1rem;background:var(--painl);border:1px solid rgba(192,57,43,0.2);border-radius:4px;font-size:0.84rem;color:var(--pain);display:none;margin-bottom:1rem;}
+
+.info-note{padding:0.8rem 1rem;background:var(--bluel);border:1px solid rgba(27,78,138,0.15);border-radius:4px;font-size:0.8rem;color:var(--blue);line-height:1.55;margin-bottom:1.5rem;}
+.info-note strong{font-weight:500;}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="form-wrap">
+  <div class="form-title">New Competitive Analysis</div>
+  <div class="form-sub">Enter company names and aliases. ReviewLedger will automatically find their Trustpilot pages and search Reddit — no URLs needed.</div>
+
+  <div class="info-note">
+    <strong>How it works:</strong> Enter a company name and any aliases it goes by. The system searches Trustpilot and Reddit automatically using these names, classifies every review with AI, and generates a full intelligence report showing what's going right and wrong for each competitor.
+  </div>
+
+  <div id="form-error" class="form-error"></div>
+
+  <!-- PROJECT -->
+  <div class="form-section">
+    <div class="form-section-title">Project</div>
+    <div class="form-row">
+      <label>Project name</label>
+      <input type="text" id="project-name" placeholder="e.g. Canadian Alternative Lenders Q2 2026" />
+    </div>
+  </div>
+
+  <!-- SUBJECT -->
+  <div class="form-section">
+    <div class="form-section-title">Subject company</div>
+    <div class="form-row">
+      <label>Company name</label>
+      <input type="text" id="subject-name" placeholder="e.g. My Company" />
+    </div>
+    <div class="form-row">
+      <label>Aliases <span class="hint">— other names this company is known by, comma separated</span></label>
+      <input type="text" id="subject-aliases" placeholder="e.g. MyCompany Inc, MC Financial" />
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="form-section">
+    <div class="form-section-title">Review timeline</div>
+    <div class="timeline-options" id="timeline-opts">
+      <div class="timeline-opt" data-val="30">Last 30 days</div>
+      <div class="timeline-opt" data-val="90">Last 90 days</div>
+      <div class="timeline-opt" data-val="180">Last 6 months</div>
+      <div class="timeline-opt selected" data-val="365">Last 12 months</div>
+      <div class="timeline-opt" data-val="730">Last 2 years</div>
+    </div>
+    <input type="hidden" id="timeline" value="365" />
+  </div>
+
+  <!-- COMPETITORS -->
+  <div class="form-section">
+    <div class="form-section-title">Competitors to analyse</div>
+    <div class="competitors-list" id="comp-list"></div>
+    <button class="add-comp-btn" onclick="addCompetitor()">+ Add competitor</button>
+  </div>
+
+  <div class="form-actions">
+    <button class="btn btn-primary" onclick="submitForm()" id="submit-btn">Run Analysis</button>
+    <a href="/" class="btn btn-outline">Cancel</a>
+  </div>
+</div>
+
+<script>
+let compCount = 0;
+
+document.querySelectorAll('.timeline-opt').forEach(opt => {
+  opt.addEventListener('click', () => {
+    document.querySelectorAll('.timeline-opt').forEach(o => o.classList.remove('selected'));
+    opt.classList.add('selected');
+    document.getElementById('timeline').value = opt.dataset.val;
+  });
+});
+
+function addCompetitor(name='', aliases='') {
+  const id = ++compCount;
+  const card = document.createElement('div');
+  card.className = 'comp-card';
+  card.id = `comp-${id}`;
+  card.innerHTML = `
+    <div class="comp-card-header">
+      <span class="comp-num">Competitor ${id}</span>
+      <button class="remove-btn" onclick="document.getElementById('comp-${id}').remove()">✕ Remove</button>
+    </div>
+    <div class="comp-card-body">
+      <div class="form-row" style="margin:0">
+        <label>Company name</label>
+        <input type="text" id="comp-name-${id}" placeholder="e.g. Home Trust" value="${name}" />
+      </div>
+      <div class="form-row" style="margin:0">
+        <label>Aliases <span class="hint">— comma separated, all names this company is known by</span></label>
+        <input type="text" id="comp-aliases-${id}" placeholder="e.g. Home Trust Company, HTC, Home Bank, Home Capital Group" value="${aliases}" />
+      </div>
+    </div>
+  `;
+  document.getElementById('comp-list').appendChild(card);
+}
+
+function getCompetitors() {
+  return Array.from(document.querySelectorAll('.comp-card')).map(card => {
+    const id = card.id.replace('comp-','');
+    const name = document.getElementById(`comp-name-${id}`)?.value?.trim();
+    if (!name) return null;
+    const aliasStr = document.getElementById(`comp-aliases-${id}`)?.value?.trim() || '';
+    const aliases = aliasStr ? aliasStr.split(',').map(a => a.trim()).filter(Boolean) : [name];
+    return { name, aliases };
+  }).filter(Boolean);
+}
+
+async function submitForm() {
+  const projectName   = document.getElementById('project-name').value.trim();
+  const subjectName   = document.getElementById('subject-name').value.trim();
+  const subjectAlias  = document.getElementById('subject-aliases').value.trim();
+  const subjectAliases = subjectAlias ? subjectAlias.split(',').map(a=>a.trim()).filter(Boolean) : [subjectName];
+  const comps         = getCompetitors();
+  const timeline      = document.getElementById('timeline').value;
+
+  if (!projectName) { showError('Please enter a project name.'); return; }
+  if (!subjectName) { showError('Please enter your subject company name.'); return; }
+  if (comps.length === 0) { showError('Please add at least one competitor.'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.textContent = 'Starting…';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch('/api/project', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name:            projectName,
+        subject:         subjectName,
+        subject_aliases: subjectAliases,
+        competitors:     comps,
+        timeline:        parseInt(timeline),
+      })
+    });
+    const data = await res.json();
+    window.location.href = `/project/${data.project_id}`;
+  } catch(e) {
+    showError('Failed to start. Is the server running?');
+    btn.textContent = 'Run Analysis';
+    btn.disabled = false;
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('form-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+// Start with 2 competitor slots
+addCompetitor();
+addCompetitor();
+</script>
+{% endblock %}
