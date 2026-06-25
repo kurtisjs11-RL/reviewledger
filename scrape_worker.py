@@ -20,6 +20,83 @@ logging.basicConfig(level=logging.INFO, stream=sys.stderr,
 logger = logging.getLogger("worker")
 
 
+def _scrape_trustpilot_direct(ctx, start_url: str, slug: str, name: str, max_pages: int = 5):
+    """Scrape Trustpilot using an existing Playwright browser context."""
+    import json as _json
+    import re as _re
+    from bs4 import BeautifulSoup
+    from models import RawReview, Platform
+    from datetime import datetime as _dt
+    import hashlib, time, random
+
+    all_reviews = []
+    seen = set()
+
+    for page_num in range(1, max_pages + 1):
+        url = start_url if page_num == 1 else f"{start_url}?page={page_num}"
+        try:
+            page = ctx.new_page()
+            page.route("**/*.{png,jpg,jpeg,gif,webp,woff,woff2,ttf}", lambda r: r.abort())
+            page.goto(url, wait_until="domcontentloaded", timeout=25000)
+            time.sleep(random.uniform(1.0, 1.8))
+            html = page.content()
+            page.close()
+        except Exception as e:
+            logger.warning("[Trustpilot] Page error: %s", e)
+            break
+
+        soup = BeautifulSoup(html, "html.parser")
+
+        # Extract from JSON-LD
+        page_reviews = []
+        for script in soup.find_all("script", type="application/ld+json"):
+            try:
+                data = _json.loads(script.string or "{}")
+                items = data if isinstance(data, list) else [data]
+                for item in items:
+                    for rev in item.get("review", []) + ([] if item.get("@type") != "Review" else [item]):
+                        body = rev.get("reviewBody", "") or rev.get("description", "")
+                        if not body or len(body) < 15:
+                            continue
+                        rating_data = rev.get("reviewRating", {})
+                        rating = float(rating_data.get("ratingValue", 3.0))
+                        author_data = rev.get("author", {})
+                        author = author_data.get("name", "Reviewer") if isinstance(author_data, dict) else str(author_data)
+                        date_str = rev.get("datePublished", "")
+                        try:
+                            review_date = _dt.fromisoformat(date_str[:19]) if date_str else _dt.utcnow()
+                        except:
+                            review_date = _dt.utcnow()
+                        body_hash = hashlib.md5((body[:100] + author).encode()).hexdigest()
+                        if body_hash in seen:
+                            continue
+                        seen.add(body_hash)
+                        review_id = hashlib.sha256(f"trustpilot:{slug}:{author}:{review_date.date()}:{body[:80]}".encode()).hexdigest()[:32]
+                        page_reviews.append(RawReview(
+                            review_id=review_id, platform=Platform.TRUSTPILOT,
+                            competitor_name=name, competitor_slug=slug,
+                            rating=min(5.0, max(1.0, rating)), title="", body=body[:3000],
+                            author=author, author_role=None, author_company=None,
+                            author_company_size=None, review_date=review_date,
+                            platform_url=url, raw_html_hash=body_hash,
+                        ))
+            except Exception:
+                pass
+
+        if not page_reviews:
+            break
+
+        all_reviews.extend(page_reviews)
+        logger.info("[Trustpilot] Page %d: %d reviews (total %d)", page_num, len(page_reviews), len(all_reviews))
+
+        # Check for next page
+        if not soup.find("a", {"data-page-number": str(page_num + 1)}) and            not soup.find("a", attrs={"aria-label": _re.compile(r"next|Next", _re.I)}):
+            break
+
+    return all_reviews
+
+
+
 def main():
     if len(sys.argv) < 3:
         sys.exit(1)
@@ -93,21 +170,17 @@ def main():
 
         platform_urls = build_platform_urls(platform_list, name, None, tp_url)
 
+        # Reduce limits on server to keep runtime under control
+        tp_max_pages  = 5 if is_railway else 10
+        max_reviews   = 40 if is_railway else 60
+
         for pid, purl in platform_urls.items():
             try:
                 if pid == "trustpilot":
                     if not tp_url:
                         log(f"  trustpilot: no URL", "warning"); continue
-                    scraper = TrustpilotScraper()
-                    def _tp_fetch(url, _c=ctx):
-                        from scrapers.base_scraper import get_playwright_page
-                        from bs4 import BeautifulSoup
-                        page = get_playwright_page(_c, url, wait=1.5)
-                        if not page: return None
-                        html = page.content(); page.close()
-                        return BeautifulSoup(html, "html.parser")
-                    scraper._fetch_with_playwright = _tp_fetch
-                    raw = scraper.scrape_competitor(competitor_slug=slug, competitor_name=name, start_url=tp_url, max_pages=10)
+                    # Scrape Trustpilot directly using existing browser context
+                    raw = _scrape_trustpilot_direct(ctx, tp_url, slug, name, tp_max_pages)
                     n = sum(1 for r in raw if safe_insert(r))
                     new += n; log(f"  trustpilot: {len(raw)} found, {n} new")
 
@@ -121,17 +194,17 @@ def main():
                     new += n; log(f"  reddit: {len(all_rd)} found, {n} new")
 
                 elif pid == "google":
-                    scraped = scrape_google_reviews(ctx, name, slug, aliases, max_reviews=60)
+                    scraped = scrape_google_reviews(ctx, name, slug, aliases, max_reviews=max_reviews)
                     n = sum(1 for s in scraped if safe_insert(to_raw(s, slug, name)))
                     new += n; log(f"  google: {len(scraped)} found, {n} new")
 
                 elif pid == "bbb":
-                    scraped = scrape_bbb(ctx, name, slug, aliases, max_reviews=40)
+                    scraped = scrape_bbb(ctx, name, slug, aliases, max_reviews=max_reviews)
                     n = sum(1 for s in scraped if safe_insert(to_raw(s, slug, name)))
                     new += n; log(f"  bbb: {len(scraped)} found, {n} new")
 
                 else:
-                    scraped = scrape_generic(ctx, purl, pid, name, slug, max_reviews=40)
+                    scraped = scrape_generic(ctx, purl, pid, name, slug, max_reviews=max_reviews)
                     n = sum(1 for s in scraped if safe_insert(to_raw(s, slug, name)))
                     new += n
                     log(f"  {pid}: {len(scraped)} found, {n} new" if scraped else f"  {pid}: 0 found", "warning" if not scraped else "info")
@@ -145,8 +218,12 @@ def main():
     from playwright.sync_api import sync_playwright
 
     total_new = 0
-    max_par = min(3, len(entities))
-    log(f"Running {len(entities)} companies in parallel (max {max_par})...")
+    # On server: run sequentially to avoid memory issues with multiple Chromium instances
+    # On local with plenty of RAM: increase max_par to 3
+    import os as _os
+    is_railway = bool(_os.environ.get("RAILWAY_ENVIRONMENT") or _os.environ.get("DATABASE_URL"))
+    max_par = 1 if is_railway else min(3, len(entities))
+    log(f"Running {len(entities)} companies (max {max_par} parallel)...")
 
     def run_one(comp):
         with sync_playwright() as pw:
@@ -154,7 +231,7 @@ def main():
 
     with ThreadPoolExecutor(max_workers=max_par) as ex:
         futures = {ex.submit(run_one, c): c["name"] for c in entities}
-        for f in as_completed(futures):
+        for f in as_completed(futures, timeout=900):
             try:
                 total_new += f.result()
             except Exception as e:
